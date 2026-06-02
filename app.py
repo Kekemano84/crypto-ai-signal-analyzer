@@ -17,7 +17,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 st.set_page_config(page_title="Crypto AI Signal Analyzer", layout="wide")
 
 COINS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT"]
-exchange = ccxt.binance({"enableRateLimit": True})
+exchange = ccxt.binanceus({"enableRateLimit": True})
 
 
 def send_telegram(message):

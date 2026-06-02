@@ -11,10 +11,109 @@ from ta.volatility import AverageTrueRange
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+def get_secret(name):
+    try:
+        return st.secrets[name]
+    except Exception:
+        return os.getenv(name)
 
-st.set_page_config(page_title="Crypto AI Signal Analyzer", layout="wide")
+TELEGRAM_BOT_TOKEN = get_secret("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = get_secret("TELEGRAM_CHAT_ID")
+
+st.set_page_config(
+    page_title="Crypto AI Signal Analyzer",
+    page_icon="⚡",
+    layout="wide"
+)
+
+st.markdown("""
+<style>
+.main {
+    background-color: #0b0f19;
+}
+.big-title {
+    font-size: 54px;
+    font-weight: 800;
+    color: #ffffff;
+}
+.subtitle {
+    font-size: 20px;
+    color: #b6c2d9;
+}
+.card {
+    padding: 20px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #111827, #1f2937);
+    border: 1px solid #334155;
+    margin-bottom: 15px;
+}
+.green-card {
+    padding: 18px;
+    border-radius: 15px;
+    background-color: #123d2a;
+    border: 1px solid #22c55e;
+    color: #bbf7d0;
+    font-size: 18px;
+}
+.red-card {
+    padding: 18px;
+    border-radius: 15px;
+    background-color: #3d1212;
+    border: 1px solid #ef4444;
+    color: #fecaca;
+    font-size: 18px;
+}
+.wait-card {
+    padding: 18px;
+    border-radius: 15px;
+    background-color: #3b3312;
+    border: 1px solid #eab308;
+    color: #fef3c7;
+    font-size: 18px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+TEXT = {
+    "Magyar": {
+        "title": "⚡ Crypto Edge AI",
+        "subtitle": "Professzionális BTC / ETH / SOL / BNB jelzésfigyelő Telegram értesítéssel. Automatikus trade nincs.",
+        "settings": "Beállítások",
+        "language": "Nyelv / Language",
+        "timeframe": "Idősík",
+        "account": "Számla mérete USDT",
+        "risk": "Kockázat trade-enként %",
+        "maxpos": "Max pozíció méret USDT",
+        "auto": "Automatikus frissítés",
+        "refresh": "Frissítés gyakorisága",
+        "telegram": "Telegram signal küldés bekapcsolása",
+        "button": "Frissítés / Elemzés indítása",
+        "info": "Kattints a Frissítés / Elemzés indítása gombra.",
+        "loading": "Adatok lekérése és elemzés...",
+        "strong": "🏆 Erős jelzések",
+        "full": "📊 Teljes elemzés",
+        "scanner": "AI Market Scanner",
+    },
+    "English": {
+        "title": "⚡ Crypto Edge AI",
+        "subtitle": "Professional BTC / ETH / SOL / BNB signal scanner with Telegram alerts. No automatic trading.",
+        "settings": "Settings",
+        "language": "Language / Nyelv",
+        "timeframe": "Timeframe",
+        "account": "Account size USDT",
+        "risk": "Risk per trade %",
+        "maxpos": "Max position size USDT",
+        "auto": "Auto refresh",
+        "refresh": "Refresh interval",
+        "telegram": "Enable Telegram signals",
+        "button": "Start Refresh / Analysis",
+        "info": "Click the Start Refresh / Analysis button.",
+        "loading": "Fetching market data and analysing...",
+        "strong": "🏆 Strong Signals",
+        "full": "📊 Full Analysis",
+        "scanner": "AI Market Scanner",
+    }
+}
 
 COINS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT"]
 
@@ -31,10 +130,7 @@ def send_telegram(message):
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         requests.post(
             url,
-            json={
-                "chat_id": TELEGRAM_CHAT_ID,
-                "text": message
-            },
+            json={"chat_id": TELEGRAM_CHAT_ID, "text": message},
             timeout=10
         )
     except Exception as e:
@@ -43,10 +139,7 @@ def send_telegram(message):
 
 def get_data(symbol, timeframe, limit=250):
     data = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
-    df = pd.DataFrame(
-        data,
-        columns=["time", "open", "high", "low", "close", "volume"]
-    )
+    df = pd.DataFrame(data, columns=["time", "open", "high", "low", "close", "volume"])
     df["time"] = pd.to_datetime(df["time"], unit="ms")
     return df
 
@@ -63,12 +156,7 @@ def analyze_coin(symbol, timeframe, account_size, risk_percent, max_position_siz
     df["macd"] = macd.macd()
     df["macd_signal"] = macd.macd_signal()
 
-    atr = AverageTrueRange(
-        df["high"],
-        df["low"],
-        df["close"],
-        window=14
-    )
+    atr = AverageTrueRange(df["high"], df["low"], df["close"], window=14)
     df["atr"] = atr.average_true_range()
 
     df = df.dropna()
@@ -84,21 +172,9 @@ def analyze_coin(symbol, timeframe, account_size, risk_percent, max_position_siz
     atr_value = float(last["atr"])
 
     score = 0
-
-    if price > ema200:
-        score += 25
-    else:
-        score -= 25
-
-    if ema20 > ema50:
-        score += 25
-    else:
-        score -= 25
-
-    if macd_value > macd_signal:
-        score += 25
-    else:
-        score -= 25
+    score += 25 if price > ema200 else -25
+    score += 25 if ema20 > ema50 else -25
+    score += 25 if macd_value > macd_signal else -25
 
     if 45 <= rsi <= 65:
         score += 10
@@ -112,25 +188,21 @@ def analyze_coin(symbol, timeframe, account_size, risk_percent, max_position_siz
         stop_loss = price - atr_value * 1.5
         tp1 = price + atr_value * 2
         tp2 = price + atr_value * 3
-
     elif score >= 35:
         signal = "LONG"
         stop_loss = price - atr_value * 1.5
         tp1 = price + atr_value * 2
         tp2 = price + atr_value * 3
-
     elif score <= -60:
         signal = "STRONG SHORT"
         stop_loss = price + atr_value * 1.5
         tp1 = price - atr_value * 2
         tp2 = price - atr_value * 3
-
     elif score <= -35:
         signal = "SHORT"
         stop_loss = price + atr_value * 1.5
         tp1 = price - atr_value * 2
         tp2 = price - atr_value * 3
-
     else:
         signal = "WAIT"
         stop_loss = 0
@@ -166,65 +238,38 @@ def analyze_coin(symbol, timeframe, account_size, risk_percent, max_position_siz
     }
 
 
-st.title("🚀 Crypto AI Signal Analyzer")
-st.write(
-    "BTC / ETH / SOL / BNB elemző rendszer Telegram jelzésekkel. "
-    "Automatikus trade nincs."
-)
-
 with st.sidebar:
-    st.header("Beállítások")
+    language = st.selectbox("Language / Nyelv", ["Magyar", "English"])
+    t = TEXT[language]
 
-    timeframe = st.selectbox(
-        "Idősík",
-        ["5m", "15m", "30m", "1h", "2h", "4h"],
-        index=1
-    )
+    st.header(t["settings"])
 
-    account_size = st.number_input(
-        "Számla mérete USDT",
-        min_value=10.0,
-        value=200.0,
-        step=10.0
-    )
+    timeframe = st.selectbox(t["timeframe"], ["5m", "15m", "30m", "1h", "2h", "4h"], index=1)
+    account_size = st.number_input(t["account"], min_value=10.0, value=200.0, step=10.0)
+    risk_percent = st.slider(t["risk"], min_value=0.5, max_value=5.0, value=1.0, step=0.5)
+    max_position_size = st.number_input(t["maxpos"], min_value=10.0, value=50.0, step=10.0)
+    auto_refresh = st.checkbox(t["auto"], value=False)
+    refresh_seconds = st.selectbox(t["refresh"], [30, 60, 120, 300], index=1)
+    telegram_enabled = st.checkbox(t["telegram"], value=True)
 
-    risk_percent = st.slider(
-        "Kockázat trade-enként %",
-        min_value=0.5,
-        max_value=5.0,
-        value=1.0,
-        step=0.5
-    )
 
-    max_position_size = st.number_input(
-        "Max pozíció méret USDT",
-        min_value=10.0,
-        value=50.0,
-        step=10.0
-    )
-
-    auto_refresh = st.checkbox("Automatikus frissítés", value=False)
-
-    refresh_seconds = st.selectbox(
-        "Frissítés gyakorisága",
-        [30, 60, 120, 300],
-        index=1
-    )
-
-    telegram_enabled = st.checkbox(
-        "Telegram signal küldés bekapcsolása",
-        value=True
-    )
-
+st.markdown(
+    f"""
+    <div class="card">
+        <div class="big-title">{t['title']}</div>
+        <div class="subtitle">{t['subtitle']}</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 if "last_signals" not in st.session_state:
     st.session_state.last_signals = {}
 
-
-if st.button("Frissítés / Elemzés indítása") or auto_refresh:
+if st.button(t["button"]) or auto_refresh:
     results = []
 
-    with st.spinner("Adatok lekérése és elemzés..."):
+    with st.spinner(t["loading"]):
         for coin in COINS:
             try:
                 result = analyze_coin(
@@ -234,7 +279,6 @@ if st.button("Frissítés / Elemzés indítása") or auto_refresh:
                     risk_percent,
                     max_position_size
                 )
-
                 results.append(result)
 
                 signal = result["Signal"]
@@ -249,18 +293,18 @@ if st.button("Frissítés / Elemzés indítása") or auto_refresh:
                     emoji = "🟢" if signal == "STRONG LONG" else "🔴"
 
                     message = (
-                        f"{emoji} {signal} SIGNAL\n\n"
+                        f"{emoji} {signal}\n\n"
                         f"Coin: {result['Coin']}\n"
                         f"Timeframe: {result['Timeframe']}\n"
                         f"Price: {result['Price']}\n"
                         f"RSI: {result['RSI']}\n"
                         f"Score: {result['Score']}\n\n"
-                        f"Stop Loss: {result['Stop Loss']}\n"
+                        f"SL: {result['Stop Loss']}\n"
                         f"TP1: {result['TP1']}\n"
                         f"TP2: {result['TP2']}\n\n"
                         f"Max Loss: {result['Max Loss USDT']} USDT\n"
-                        f"Suggested Position: {result['Position Size USDT']} USDT\n\n"
-                        f"⚠️ Ez csak jelzés, nem automatikus trade."
+                        f"Position: {result['Position Size USDT']} USDT\n\n"
+                        f"⚠️ Signal only. No automatic trade."
                     )
 
                     send_telegram(message)
@@ -286,13 +330,35 @@ if st.button("Frissítés / Elemzés indítása") or auto_refresh:
                     "Position Size USDT": 0,
                 })
 
+    cols = st.columns(4)
+    for idx, r in enumerate(results):
+        with cols[idx]:
+            if "LONG" in r["Signal"]:
+                color = "green-card"
+            elif "SHORT" in r["Signal"]:
+                color = "red-card"
+            else:
+                color = "wait-card"
+
+            st.markdown(
+                f"""
+                <div class="{color}">
+                    <b>{r['Coin']}</b><br>
+                    {r['Signal']}<br>
+                    Score: {r['Score']}<br>
+                    Price: {r['Price']}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+
     strong_results = [
         r for r in results
         if r["Signal"] in ["STRONG LONG", "STRONG SHORT"]
     ]
 
     if strong_results:
-        st.subheader("🏆 Erős jelzések")
+        st.subheader(t["strong"])
         for r in strong_results:
             st.success(
                 f"{r['Coin']} | {r['Signal']} | Score: {r['Score']} | "
@@ -300,7 +366,7 @@ if st.button("Frissítés / Elemzés indítása") or auto_refresh:
                 f"TP1: {r['TP1']} | TP2: {r['TP2']}"
             )
 
-    st.subheader("📊 Teljes elemzés")
+    st.subheader(t["full"])
     st.dataframe(pd.DataFrame(results).astype(str), use_container_width=True)
 
     if auto_refresh:
@@ -309,4 +375,4 @@ if st.button("Frissítés / Elemzés indítása") or auto_refresh:
         st.rerun()
 
 else:
-    st.info("Kattints a Frissítés / Elemzés indítása gombra.")
+    st.info(t["info"])

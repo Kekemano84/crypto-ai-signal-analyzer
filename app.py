@@ -1,5 +1,6 @@
 import os
 import time
+import base64
 from datetime import datetime
 
 import ccxt
@@ -33,7 +34,7 @@ OPEN_FILE = "paper_open_trades.csv"
 CLOSED_FILE = "paper_closed_trades.csv"
 
 OPEN_COLS = [
-    "opened_at", "label", "coin", "timeframe", "signal", "entry",
+    "opened_at", "group", "label", "coin", "timeframe", "signal", "entry",
     "stop_loss", "tp1", "tp2", "score", "margin", "leverage", "notional"
 ]
 
@@ -41,134 +42,143 @@ CLOSED_COLS = OPEN_COLS + [
     "closed_at", "exit_price", "result", "pnl_usdt", "equity"
 ]
 
-COINS = {
+TOP4_COINS = {
     "BTC": ["BTC/USD", "XBT/USD", "BTC/USDT", "XBT/USDT"],
     "ETH": ["ETH/USD", "ETH/USDT"],
     "SOL": ["SOL/USD", "SOL/USDT"],
     "BNB": ["BNB/USD", "BNB/USDT"],
 }
 
+ALTCOINS = {
+    "XRP": ["XRP/USD", "XRP/USDT"],
+    "ADA": ["ADA/USD", "ADA/USDT"],
+    "DOGE": ["DOGE/USD", "DOGE/USDT"],
+    "LINK": ["LINK/USD", "LINK/USDT"],
+    "LTC": ["LTC/USD", "LTC/USDT"],
+    "DOT": ["DOT/USD", "DOT/USDT"],
+    "AVAX": ["AVAX/USD", "AVAX/USDT"],
+    "XLM": ["XLM/USD", "XLM/USDT"],
+    "ATOM": ["ATOM/USD", "ATOM/USDT"],
+    "BCH": ["BCH/USD", "BCH/USDT"],
+}
+
 exchange = ccxt.kraken({"enableRateLimit": True})
 exchange.load_markets()
 
-st.markdown("""
+
+def matrix_background_css():
+    try:
+        with open("matrix-code.gif", "rb") as f:
+            data = base64.b64encode(f.read()).decode()
+        return f"""
+        background-image:
+            linear-gradient(rgba(0,0,0,0.66), rgba(0,0,0,0.90)),
+            url("data:image/gif;base64,{data}");
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center;
+        """
+    except Exception:
+        return """
+        background:
+            radial-gradient(circle at top, rgba(0,255,90,0.16), transparent 35%),
+            linear-gradient(180deg, #020403 0%, #06120b 45%, #020403 100%);
+        """
+
+
+st.markdown(f"""
 <style>
-.stApp {
-    background:
-        radial-gradient(circle at top, rgba(0,255,90,0.12), transparent 35%),
-        linear-gradient(180deg, #020403 0%, #06120b 45%, #020403 100%);
+.stApp {{
+    {matrix_background_css()}
     color: #eaffea;
-}
+}}
 
-.stApp::before {
-    content: "010101 101010 001100 111000 010101 101010 001100 111000 010101 101010 001100 111000";
-    position: fixed;
-    top: -20%;
-    left: 0;
-    width: 100%;
-    height: 140%;
-    color: rgba(0, 255, 80, 0.13);
-    font-family: monospace;
-    font-size: 22px;
-    line-height: 34px;
-    white-space: pre-wrap;
-    word-spacing: 18px;
-    z-index: 0;
-    animation: matrixRain 18s linear infinite;
-    pointer-events: none;
-}
-
-@keyframes matrixRain {
-    from { transform: translateY(-120px); }
-    to { transform: translateY(120px); }
-}
-
-.block-container {
+.block-container {{
     position: relative;
     z-index: 2;
     padding-top: 2rem;
-}
+}}
 
-section[data-testid="stSidebar"] {
-    background: rgba(5, 15, 10, 0.94);
+section[data-testid="stSidebar"] {{
+    background: rgba(5, 15, 10, 0.96);
     border-right: 1px solid rgba(0,255,100,0.25);
-}
+}}
 
-.big-title {
+.big-title {{
     font-size: 56px;
     font-weight: 900;
     color: #ffffff;
-    text-shadow: 0 0 18px rgba(0,255,100,0.55);
-}
+    text-shadow: 0 0 22px rgba(0,255,100,0.75);
+}}
 
-.subtitle {
+.subtitle {{
     font-size: 20px;
     color: #9dffb3;
     margin-bottom: 22px;
-}
+}}
 
-.green-card {
+.green-card {{
     padding: 18px;
     border-radius: 15px;
-    background: rgba(0, 80, 35, 0.75);
+    background: rgba(0, 80, 35, 0.78);
     border: 1px solid #22c55e;
     color: #bbf7d0;
     font-size: 18px;
-    box-shadow: 0 0 18px rgba(34,197,94,0.25);
-}
+    box-shadow: 0 0 18px rgba(34,197,94,0.35);
+}}
 
-.red-card {
+.red-card {{
     padding: 18px;
     border-radius: 15px;
-    background: rgba(90, 12, 20, 0.75);
+    background: rgba(90, 12, 20, 0.78);
     border: 1px solid #ef4444;
     color: #fecaca;
     font-size: 18px;
-    box-shadow: 0 0 18px rgba(239,68,68,0.25);
-}
+    box-shadow: 0 0 18px rgba(239,68,68,0.35);
+}}
 
-.wait-card {
+.wait-card {{
     padding: 18px;
     border-radius: 15px;
-    background: rgba(70, 60, 10, 0.72);
+    background: rgba(70, 60, 10, 0.76);
     border: 1px solid #eab308;
     color: #fef3c7;
     font-size: 18px;
-    box-shadow: 0 0 18px rgba(234,179,8,0.18);
-}
+    box-shadow: 0 0 18px rgba(234,179,8,0.22);
+}}
 
-h1, h2, h3, h4, p, label, div, span {
+h1, h2, h3, h4, p, label, div, span {{
     color: #eaffea;
-}
+}}
 
-[data-testid="stMetricValue"] {
+[data-testid="stMetricValue"] {{
     color: #22ff66;
-    text-shadow: 0 0 12px rgba(0,255,90,0.45);
-}
+    text-shadow: 0 0 12px rgba(0,255,90,0.55);
+}}
 
-.stButton > button {
+.stButton > button {{
     background: linear-gradient(90deg, #16a34a, #22c55e);
     color: white;
     border: none;
     border-radius: 12px;
     font-weight: 800;
-}
+}}
 
-.stTabs [data-baseweb="tab-list"] {
+.stTabs [data-baseweb="tab-list"] {{
     gap: 10px;
-}
+}}
 
-.stTabs [data-baseweb="tab"] {
-    background: rgba(0, 30, 15, 0.65);
+.stTabs [data-baseweb="tab"] {{
+    background: rgba(0, 30, 15, 0.72);
     border-radius: 12px;
     color: #d9ffe3;
-    border: 1px solid rgba(0,255,100,0.2);
-}
+    border: 1px solid rgba(0,255,100,0.24);
+}}
 
-.stTabs [aria-selected="true"] {
-    background: rgba(0, 120, 45, 0.45);
-    border: 1px solid rgba(0,255,100,0.55);
-}
+.stTabs [aria-selected="true"] {{
+    background: rgba(0, 120, 45, 0.50);
+    border: 1px solid rgba(0,255,100,0.60);
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -196,30 +206,20 @@ def resolve_market(candidates):
 def send_discord(message):
     if not DISCORD_WEBHOOK:
         return
-
     try:
-        requests.post(
-            DISCORD_WEBHOOK,
-            json={"content": message},
-            timeout=10
-        )
+        requests.post(DISCORD_WEBHOOK, json={"content": message}, timeout=10)
     except Exception as e:
         st.warning(f"Discord hiba: {e}")
 
 
 def get_data(symbol, timeframe, limit=250):
     data = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
-
-    df = pd.DataFrame(
-        data,
-        columns=["time", "open", "high", "low", "close", "volume"]
-    )
-
+    df = pd.DataFrame(data, columns=["time", "open", "high", "low", "close", "volume"])
     df["time"] = pd.to_datetime(df["time"], unit="ms")
     return df
 
 
-def analyze_coin(label, symbol, timeframe, paper_account, risk_percent, margin, leverage):
+def analyze_coin(group_name, label, symbol, timeframe, paper_account, risk_percent, margin, leverage):
     df = get_data(symbol, timeframe)
 
     df["rsi"] = RSIIndicator(df["close"], window=14).rsi()
@@ -235,7 +235,6 @@ def analyze_coin(label, symbol, timeframe, paper_account, risk_percent, margin, 
     df["atr"] = atr.average_true_range()
 
     df = df.dropna()
-
     if df.empty:
         raise ValueError("Not enough market data.")
 
@@ -278,10 +277,8 @@ def analyze_coin(label, symbol, timeframe, paper_account, risk_percent, margin, 
         tp1 = 0
         tp2 = 0
 
-    max_loss = paper_account * (risk_percent / 100)
-    notional = margin * leverage
-
     return {
+        "Group": group_name,
         "Label": label,
         "Coin": symbol,
         "Timeframe": timeframe,
@@ -297,10 +294,10 @@ def analyze_coin(label, symbol, timeframe, paper_account, risk_percent, margin, 
         "Stop Loss": round(stop_loss, 4),
         "TP1": round(tp1, 4),
         "TP2": round(tp2, 4),
-        "Max Loss USDT": round(max_loss, 2),
+        "Max Loss USDT": round(paper_account * (risk_percent / 100), 2),
         "Margin USDT": round(margin, 2),
         "Leverage": leverage,
-        "Notional USDT": round(notional, 2),
+        "Notional USDT": round(margin * leverage, 2),
     }
 
 
@@ -309,15 +306,16 @@ def open_trade(result, discord_enabled):
 
     if not open_df.empty:
         duplicate = open_df[
+            (open_df["group"] == result["Group"]) &
             (open_df["label"] == result["Label"]) &
             (open_df["timeframe"] == result["Timeframe"])
         ]
-
         if not duplicate.empty:
             return
 
     trade = {
         "opened_at": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+        "group": result["Group"],
         "label": result["Label"],
         "coin": result["Coin"],
         "timeframe": result["Timeframe"],
@@ -332,18 +330,14 @@ def open_trade(result, discord_enabled):
         "notional": result["Notional USDT"],
     }
 
-    open_df = pd.concat(
-        [open_df, pd.DataFrame([trade])],
-        ignore_index=True
-    )
-
+    open_df = pd.concat([open_df, pd.DataFrame([trade])], ignore_index=True)
     save_csv(open_df, OPEN_FILE)
 
     if discord_enabled:
         emoji = "🟢" if result["Signal"] == "STRONG LONG" else "🔴"
-
         send_discord(
             f"{emoji} **NEW PAPER TRADE**\n\n"
+            f"Group: **{result['Group']}**\n"
             f"Signal: **{result['Signal']}**\n"
             f"Coin: **{result['Coin']}**\n"
             f"Timeframe: {result['Timeframe']}\n"
@@ -369,11 +363,7 @@ def update_trades(start_equity, discord_enabled):
     current_equity = start_equity
 
     if not closed_df.empty and "equity" in closed_df.columns:
-        equity_series = pd.to_numeric(
-            closed_df["equity"],
-            errors="coerce"
-        ).dropna()
-
+        equity_series = pd.to_numeric(closed_df["equity"], errors="coerce").dropna()
         if not equity_series.empty:
             current_equity = float(equity_series.iloc[-1])
 
@@ -404,7 +394,6 @@ def update_trades(start_equity, discord_enabled):
                     closed = True
                     result = "LOSS_SL"
                     exit_price = stop_loss
-
                 pnl = margin * leverage * ((exit_price - entry) / entry)
 
             elif signal == "STRONG SHORT":
@@ -416,7 +405,6 @@ def update_trades(start_equity, discord_enabled):
                     closed = True
                     result = "LOSS_SL"
                     exit_price = stop_loss
-
                 pnl = margin * leverage * ((entry - exit_price) / entry)
 
             else:
@@ -432,16 +420,13 @@ def update_trades(start_equity, discord_enabled):
                 closed_trade["pnl_usdt"] = round(pnl, 4)
                 closed_trade["equity"] = round(current_equity, 4)
 
-                closed_df = pd.concat(
-                    [closed_df, pd.DataFrame([closed_trade])],
-                    ignore_index=True
-                )
+                closed_df = pd.concat([closed_df, pd.DataFrame([closed_trade])], ignore_index=True)
 
                 if discord_enabled:
                     icon = "✅" if pnl > 0 else "❌"
-
                     send_discord(
                         f"{icon} **PAPER TRADE CLOSED**\n\n"
+                        f"Group: **{trade.get('group', '')}**\n"
                         f"Coin: **{trade['coin']}**\n"
                         f"Signal: {signal}\n"
                         f"Entry: {entry}\n"
@@ -457,167 +442,25 @@ def update_trades(start_equity, discord_enabled):
             remaining.append(trade.to_dict())
 
     new_open_df = pd.DataFrame(remaining, columns=OPEN_COLS)
-
     save_csv(new_open_df, OPEN_FILE)
     save_csv(closed_df, CLOSED_FILE)
 
     return new_open_df, closed_df
 
 
-def show_stats(open_df, closed_df, start_equity):
-    total_closed = len(closed_df)
-
-    if closed_df.empty:
-        wins = 0
-        losses = 0
-        pnl = 0
-        win_rate = 0
-        equity = start_equity
-    else:
-        wins = len(closed_df[closed_df["result"].astype(str).str.contains("WIN")])
-        losses = len(closed_df[closed_df["result"].astype(str).str.contains("LOSS")])
-        pnl = pd.to_numeric(
-            closed_df["pnl_usdt"],
-            errors="coerce"
-        ).fillna(0).sum()
-
-        win_rate = (wins / total_closed * 100) if total_closed else 0
-        equity = start_equity + pnl
-
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-
-    c1.metric("Open", len(open_df))
-    c2.metric("Closed", total_closed)
-    c3.metric("Wins", wins)
-    c4.metric("Losses", losses)
-    c5.metric("Win Rate", f"{win_rate:.1f}%")
-    c6.metric("P/L", f"{pnl:.2f} USDT")
-
-    st.metric("Paper Equity", f"{equity:.2f} USDT")
-
-
-with st.sidebar:
-    st.header("⚙️ Beállítások")
-
-    timeframe = st.selectbox(
-        "Idősík",
-        ["5m", "15m", "30m", "1h", "2h", "4h"],
-        index=1
-    )
-
-    paper_account = st.number_input(
-        "Virtuális tőke USDT",
-        min_value=10.0,
-        value=200.0,
-        step=10.0
-    )
-
-    risk_percent = st.slider(
-        "Kockázat trade-enként %",
-        min_value=0.5,
-        max_value=5.0,
-        value=1.0,
-        step=0.5
-    )
-
-    margin = st.number_input(
-        "Trade méret / margin USDT",
-        min_value=5.0,
-        value=50.0,
-        step=5.0
-    )
-
-    leverage = st.slider(
-        "Paper leverage",
-        min_value=1,
-        max_value=100,
-        value=10,
-        step=1
-    )
-
-    if leverage >= 50:
-        st.warning(
-            "⚠️ Magas leverage kockázat! 50x felett egy kisebb rossz irányú mozgás is gyors veszteséget okozhat."
-        )
-
-    if leverage >= 75:
-        st.error(
-            "🚨 Extrém kockázat! 75x+ leverage mellett nagyon könnyen elveszítheted a teljes marginodat."
-        )
-
-    auto_refresh = st.checkbox(
-        "Automatikus frissítés",
-        value=False
-    )
-
-    if timeframe == "5m":
-        refresh_seconds = 30
-    elif timeframe == "15m":
-        refresh_seconds = 60
-    elif timeframe == "30m":
-        refresh_seconds = 120
-    elif timeframe == "1h":
-        refresh_seconds = 300
-    else:
-        refresh_seconds = 600
-
-    st.info(f"Frissítés gyakorisága: {refresh_seconds} másodperc")
-
-    discord_enabled = st.checkbox(
-        "Discord értesítés",
-        value=True
-    )
-
-
-st.markdown(
-    "<div class='big-title'>⚡ Crypto Edge AI V2</div>",
-    unsafe_allow_html=True
-)
-
-st.markdown(
-    "<div class='subtitle'>Kraken adatok + paper trading + Discord jelzések. Automatikus élő trade nincs.</div>",
-    unsafe_allow_html=True
-)
-
-st.success(
-    f"🟢 Bot Active | Last Refresh: {datetime.now().strftime('%H:%M:%S')}"
-)
-
-st.divider()
-
-tab1, tab2, tab3 = st.tabs(
-    ["📊 Dashboard", "📈 Elemzés", "📜 Trade History"]
-)
-
-run = False
-
-with tab1:
-    if st.button("🚀 Frissítés / Elemzés indítása"):
-        run = True
-
-with tab2:
-    if st.button("📈 Elemzés indítása"):
-        run = True
-
-if auto_refresh:
-    run = True
-
-if run:
-    open_df, closed_df = update_trades(
-        paper_account,
-        discord_enabled
-    )
-
+def analyze_group(group_name, coin_dict, timeframe, paper_account, risk_percent, margin, leverage, discord_enabled):
     results = []
 
-    with st.spinner("Kraken adatok lekérése és elemzés..."):
-        for label, candidates in COINS.items():
+    with st.spinner(f"{group_name} adatok lekérése és elemzés..."):
+        for label, candidates in coin_dict.items():
             symbol = resolve_market(candidates)
 
             if not symbol:
                 results.append({
+                    "Group": group_name,
                     "Label": label,
                     "Coin": "N/A",
+                    "Timeframe": timeframe,
                     "Price": 0,
                     "Score": 0,
                     "Signal": "NOT AVAILABLE ON KRAKEN",
@@ -626,70 +469,39 @@ if run:
 
             try:
                 result = analyze_coin(
-                    label,
-                    symbol,
-                    timeframe,
-                    paper_account,
-                    risk_percent,
-                    margin,
-                    leverage
+                    group_name, label, symbol, timeframe,
+                    paper_account, risk_percent, margin, leverage
                 )
-
                 results.append(result)
 
                 if result["Signal"] in ["STRONG LONG", "STRONG SHORT"]:
-                    open_trade(
-                        result,
-                        discord_enabled
-                    )
+                    open_trade(result, discord_enabled)
 
             except Exception as e:
                 results.append({
+                    "Group": group_name,
                     "Label": label,
                     "Coin": symbol,
+                    "Timeframe": timeframe,
                     "Price": 0,
                     "Score": 0,
                     "Signal": f"HIBA: {e}",
                 })
 
-    open_df, closed_df = update_trades(
-        paper_account,
-        discord_enabled
-    )
-
-    st.session_state["results"] = results
-
-else:
-    open_df = read_csv(OPEN_FILE, OPEN_COLS)
-    closed_df = read_csv(CLOSED_FILE, CLOSED_COLS)
-    results = st.session_state.get("results", [])
+    return results
 
 
-with tab1:
-    st.subheader("📊 Paper Trading Dashboard")
+def show_coin_cards(results):
+    if not results:
+        st.info("Még nincs elemzés.")
+        return
 
-    show_stats(
-        open_df,
-        closed_df,
-        paper_account
-    )
+    columns_per_row = 4
+    for start in range(0, len(results), columns_per_row):
+        cols = st.columns(columns_per_row)
+        row = results[start:start + columns_per_row]
 
-    if not closed_df.empty and "equity" in closed_df.columns:
-        curve = closed_df[["closed_at", "equity"]].copy()
-        curve["closed_at"] = pd.to_datetime(curve["closed_at"])
-        curve = curve.sort_values("closed_at").set_index("closed_at")
-
-        st.subheader("📈 Equity Curve")
-        st.line_chart(curve["equity"])
-    else:
-        st.info(
-            "Equity Curve akkor jelenik meg, ha lesz legalább egy lezárt paper trade."
-        )
-
-    if results:
-        cols = st.columns(4)
-
-        for idx, r in enumerate(results):
+        for idx, r in enumerate(row):
             with cols[idx]:
                 signal = r.get("Signal", "WAIT")
 
@@ -713,62 +525,214 @@ with tab1:
                 )
 
 
-with tab2:
-    st.subheader("📈 Elemzés")
+def show_stats(open_df, closed_df, start_equity):
+    total_closed = len(closed_df)
 
-    if results:
-        strong = [
-            r for r in results
-            if r.get("Signal") in ["STRONG LONG", "STRONG SHORT"]
-        ]
+    if closed_df.empty:
+        wins = 0
+        losses = 0
+        pnl = 0
+        win_rate = 0
+        equity = start_equity
+    else:
+        wins = len(closed_df[closed_df["result"].astype(str).str.contains("WIN")])
+        losses = len(closed_df[closed_df["result"].astype(str).str.contains("LOSS")])
+        pnl = pd.to_numeric(closed_df["pnl_usdt"], errors="coerce").fillna(0).sum()
+        win_rate = (wins / total_closed * 100) if total_closed else 0
+        equity = start_equity + pnl
+
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1.metric("Open", len(open_df))
+    c2.metric("Closed", total_closed)
+    c3.metric("Wins", wins)
+    c4.metric("Losses", losses)
+    c5.metric("Win Rate", f"{win_rate:.1f}%")
+    c6.metric("P/L", f"{pnl:.2f} USDT")
+
+    st.metric("Paper Equity", f"{equity:.2f} USDT")
+
+
+with st.sidebar:
+    st.header("⚙️ Beállítások")
+
+    timeframe = st.selectbox("Idősík", ["5m", "15m", "30m", "1h", "2h", "4h"], index=1)
+
+    paper_account = st.number_input("Virtuális tőke USDT", min_value=10.0, value=200.0, step=10.0)
+
+    risk_percent = st.slider("Kockázat trade-enként %", min_value=0.5, max_value=5.0, value=1.0, step=0.5)
+
+    margin = st.number_input("Trade méret / margin USDT", min_value=5.0, value=50.0, step=5.0)
+
+    leverage = st.slider("Paper leverage", min_value=1, max_value=100, value=10, step=1)
+
+    if leverage >= 50:
+        st.warning("⚠️ Magas leverage kockázat! 50x felett egy kisebb rossz irányú mozgás is gyors veszteséget okozhat.")
+
+    if leverage >= 75:
+        st.error("🚨 Extrém kockázat! 75x+ leverage mellett nagyon könnyen elveszítheted a teljes marginodat.")
+
+    auto_refresh = st.checkbox("Automatikus frissítés és figyelés", value=False)
+
+    if timeframe == "5m":
+        refresh_seconds = 30
+    elif timeframe == "15m":
+        refresh_seconds = 60
+    elif timeframe == "30m":
+        refresh_seconds = 120
+    elif timeframe == "1h":
+        refresh_seconds = 300
+    else:
+        refresh_seconds = 600
+
+    st.info(f"Frissítés gyakorisága: {refresh_seconds} másodperc")
+
+    discord_enabled = st.checkbox("Discord értesítés", value=True)
+
+
+st.markdown("<div class='big-title'>⚡ Crypto Edge AI V2</div>", unsafe_allow_html=True)
+st.markdown(
+    "<div class='subtitle'>Kraken adatok + paper trading + Discord jelzések. Automatikus élő trade nincs.</div>",
+    unsafe_allow_html=True
+)
+st.success(f"🟢 Bot Active | Last Refresh: {datetime.now().strftime('%H:%M:%S')}")
+st.divider()
+
+tab_dashboard, tab_top4, tab_altcoins, tab_history = st.tabs(
+    ["📊 Dashboard", "₿ TOP 4", "🚀 ALTCOINS", "📜 Trade History"]
+)
+
+open_df = read_csv(OPEN_FILE, OPEN_COLS)
+closed_df = read_csv(CLOSED_FILE, CLOSED_COLS)
+
+if "top4_results" not in st.session_state:
+    st.session_state["top4_results"] = []
+
+if "altcoin_results" not in st.session_state:
+    st.session_state["altcoin_results"] = []
+
+run_dashboard_refresh = False
+run_top4 = False
+run_altcoins = False
+
+with tab_dashboard:
+    if st.button("🔄 Frissítés"):
+        run_dashboard_refresh = True
+
+with tab_top4:
+    if st.button("₿ TOP 4 elemzés indítása"):
+        run_top4 = True
+
+with tab_altcoins:
+    if st.button("🚀 ALTCOINS elemzés indítása"):
+        run_altcoins = True
+
+if auto_refresh:
+    run_dashboard_refresh = True
+    run_top4 = True
+    run_altcoins = True
+
+if run_dashboard_refresh or run_top4 or run_altcoins:
+    open_df, closed_df = update_trades(paper_account, discord_enabled)
+
+if run_top4:
+    st.session_state["top4_results"] = analyze_group(
+        "TOP 4", TOP4_COINS, timeframe, paper_account,
+        risk_percent, margin, leverage, discord_enabled
+    )
+    open_df, closed_df = update_trades(paper_account, discord_enabled)
+
+if run_altcoins:
+    st.session_state["altcoin_results"] = analyze_group(
+        "ALTCOINS", ALTCOINS, timeframe, paper_account,
+        risk_percent, margin, leverage, discord_enabled
+    )
+    open_df, closed_df = update_trades(paper_account, discord_enabled)
+
+
+with tab_dashboard:
+    st.subheader("📊 Paper Trading Dashboard")
+    show_stats(open_df, closed_df, paper_account)
+
+    if not closed_df.empty and "equity" in closed_df.columns:
+        curve = closed_df[["closed_at", "equity"]].copy()
+        curve["closed_at"] = pd.to_datetime(curve["closed_at"])
+        curve = curve.sort_values("closed_at").set_index("closed_at")
+
+        st.subheader("📈 Equity Curve")
+        st.line_chart(curve["equity"])
+    else:
+        st.info("Equity Curve akkor jelenik meg, ha lesz legalább egy lezárt paper trade.")
+
+    st.subheader("Aktuális TOP 4 jelek")
+    show_coin_cards(st.session_state["top4_results"])
+
+    st.subheader("Aktuális ALTCOIN jelek")
+    show_coin_cards(st.session_state["altcoin_results"])
+
+
+with tab_top4:
+    st.subheader("₿ TOP 4 elemzés")
+
+    top4_results = st.session_state["top4_results"]
+    show_coin_cards(top4_results)
+
+    if top4_results:
+        strong = [r for r in top4_results if r.get("Signal") in ["STRONG LONG", "STRONG SHORT"]]
 
         if strong:
-            st.subheader("🏆 Erős jelzések")
-
+            st.subheader("🏆 TOP 4 erős jelzések")
             for r in strong:
                 st.success(
                     f"{r['Coin']} | {r['Signal']} | Score: {r['Score']} | "
-                    f"Price: {r['Price']} | SL: {r['Stop Loss']} | "
-                    f"TP1: {r['TP1']} | TP2: {r['TP2']}"
+                    f"Price: {r['Price']} | SL: {r['Stop Loss']} | TP1: {r['TP1']} | TP2: {r['TP2']}"
                 )
 
-        st.subheader("📊 Teljes elemzés")
-        st.dataframe(
-            pd.DataFrame(results).astype(str),
-            use_container_width=True
-        )
+        st.subheader("📊 TOP 4 teljes elemzés")
+        st.dataframe(pd.DataFrame(top4_results).astype(str), use_container_width=True)
     else:
-        st.info(
-            "Még nincs elemzés. Kattints az Elemzés indítása gombra."
-        )
+        st.info("Még nincs TOP 4 elemzés. Kattints a TOP 4 elemzés indítása gombra.")
 
 
-with tab3:
+with tab_altcoins:
+    st.subheader("🚀 ALTCOINS elemzés")
+
+    alt_results = st.session_state["altcoin_results"]
+    show_coin_cards(alt_results)
+
+    if alt_results:
+        strong = [r for r in alt_results if r.get("Signal") in ["STRONG LONG", "STRONG SHORT"]]
+
+        if strong:
+            st.subheader("🏆 ALTCOIN erős jelzések")
+            for r in strong:
+                st.success(
+                    f"{r['Coin']} | {r['Signal']} | Score: {r['Score']} | "
+                    f"Price: {r['Price']} | SL: {r['Stop Loss']} | TP1: {r['TP1']} | TP2: {r['TP2']}"
+                )
+
+        st.subheader("📊 ALTCOINS teljes elemzés")
+        st.dataframe(pd.DataFrame(alt_results).astype(str), use_container_width=True)
+    else:
+        st.info("Még nincs ALTCOINS elemzés. Kattints az ALTCOINS elemzés indítása gombra.")
+
+
+with tab_history:
     st.subheader("📌 Nyitott paper trade-ek")
 
     if not open_df.empty:
-        st.dataframe(
-            open_df.astype(str),
-            use_container_width=True
-        )
+        st.dataframe(open_df.astype(str), use_container_width=True)
     else:
         st.info("Nincs nyitott paper trade.")
 
     st.subheader("📜 Lezárt paper trade-ek")
 
     if not closed_df.empty:
-        st.dataframe(
-            closed_df.tail(100).astype(str),
-            use_container_width=True
-        )
+        st.dataframe(closed_df.tail(100).astype(str), use_container_width=True)
     else:
         st.info("Még nincs lezárt paper trade.")
 
 
 if auto_refresh:
-    st.info(
-        f"Automatikus frissítés {refresh_seconds} másodperc múlva..."
-    )
-
+    st.info(f"Automatikus frissítés {refresh_seconds} másodperc múlva...")
     time.sleep(refresh_seconds)
     st.rerun()

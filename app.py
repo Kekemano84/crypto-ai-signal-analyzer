@@ -20,8 +20,7 @@ def get_secret(name):
         return os.getenv(name)
 
 
-TELEGRAM_BOT_TOKEN = get_secret("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = get_secret("TELEGRAM_CHAT_ID")
+DISCORD_WEBHOOK = get_secret("DISCORD_WEBHOOK")
 
 st.set_page_config(
     page_title="Crypto Edge AI",
@@ -79,7 +78,7 @@ st.markdown("""
 TEXT = {
     "Magyar": {
         "title": "Crypto Edge AI",
-        "subtitle": "Professzionális BTC / ETH / SOL / BNB jelzésfigyelő Telegram értesítéssel. Automatikus trade nincs.",
+        "subtitle": "Professzionális BTC / ETH / SOL / BNB jelzésfigyelő Discord értesítéssel. Automatikus trade nincs.",
         "settings": "Beállítások",
         "timeframe": "Idősík",
         "account": "Számla mérete USDT",
@@ -87,7 +86,7 @@ TEXT = {
         "maxpos": "Max pozíció méret USDT",
         "auto": "Automatikus frissítés",
         "refresh": "Frissítés gyakorisága",
-        "telegram": "Telegram signal küldés bekapcsolása",
+        "discord": "Discord signal küldés bekapcsolása",
         "button": "Frissítés / Elemzés indítása",
         "info": "Kattints a Frissítés / Elemzés indítása gombra.",
         "loading": "Adatok lekérése és elemzés...",
@@ -96,7 +95,7 @@ TEXT = {
     },
     "English": {
         "title": "Crypto Edge AI",
-        "subtitle": "Professional BTC / ETH / SOL / BNB signal scanner with Telegram alerts. No automatic trading.",
+        "subtitle": "Professional BTC / ETH / SOL / BNB signal scanner with Discord alerts. No automatic trading.",
         "settings": "Settings",
         "timeframe": "Timeframe",
         "account": "Account size USDT",
@@ -104,7 +103,7 @@ TEXT = {
         "maxpos": "Max position size USDT",
         "auto": "Auto refresh",
         "refresh": "Refresh interval",
-        "telegram": "Enable Telegram signals",
+        "discord": "Enable Discord signals",
         "button": "Start Refresh / Analysis",
         "info": "Click the Start Refresh / Analysis button.",
         "loading": "Fetching market data and analysing...",
@@ -121,22 +120,34 @@ exchange = ccxt.binanceus({
 })
 
 
-def send_telegram(message):
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+def send_discord_signal(result):
+    if not DISCORD_WEBHOOK:
         return
 
+    signal = result["Signal"]
+    emoji = "🟢" if "LONG" in signal else "🔴"
+
+    message = (
+        f"{emoji} **{signal} SIGNAL**\n\n"
+        f"🪙 **Coin:** {result['Coin']}\n"
+        f"⏰ **Timeframe:** {result['Timeframe']}\n"
+        f"💰 **Price:** {result['Price']}\n"
+        f"📊 **RSI:** {result['RSI']}\n"
+        f"🧠 **Score:** {result['Score']}\n\n"
+        f"🛑 **Stop Loss:** {result['Stop Loss']}\n"
+        f"🎯 **TP1:** {result['TP1']}\n"
+        f"🎯 **TP2:** {result['TP2']}\n\n"
+        f"⚠️ Signal only. No automatic trade."
+    )
+
     try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         requests.post(
-            url,
-            json={
-                "chat_id": TELEGRAM_CHAT_ID,
-                "text": message
-            },
+            DISCORD_WEBHOOK,
+            json={"content": message},
             timeout=10
         )
     except Exception as e:
-        st.warning(f"Telegram hiba: {e}")
+        st.warning(f"Discord hiba: {e}")
 
 
 def get_data(symbol, timeframe, limit=250):
@@ -255,7 +266,7 @@ with st.sidebar:
     max_position_size = st.number_input(t["maxpos"], min_value=10.0, value=50.0, step=10.0)
     auto_refresh = st.checkbox(t["auto"], value=False)
     refresh_seconds = st.selectbox(t["refresh"], [30, 60, 120, 300], index=1)
-    telegram_enabled = st.checkbox(t["telegram"], value=True)
+    discord_enabled = st.checkbox(t["discord"], value=True)
 
 
 st.markdown("<div class='header-box'>", unsafe_allow_html=True)
@@ -301,28 +312,11 @@ if st.button(t["button"]) or auto_refresh:
                 previous_signal = st.session_state.last_signals.get(signal_key)
 
                 if (
-                    telegram_enabled
+                    discord_enabled
                     and signal in ["STRONG LONG", "STRONG SHORT"]
                     and previous_signal != signal
                 ):
-                    emoji = "🟢" if signal == "STRONG LONG" else "🔴"
-
-                    message = (
-                        f"{emoji} {signal}\n\n"
-                        f"Coin: {result['Coin']}\n"
-                        f"Timeframe: {result['Timeframe']}\n"
-                        f"Price: {result['Price']}\n"
-                        f"RSI: {result['RSI']}\n"
-                        f"Score: {result['Score']}\n\n"
-                        f"SL: {result['Stop Loss']}\n"
-                        f"TP1: {result['TP1']}\n"
-                        f"TP2: {result['TP2']}\n\n"
-                        f"Max Loss: {result['Max Loss USDT']} USDT\n"
-                        f"Position: {result['Position Size USDT']} USDT\n\n"
-                        f"⚠️ Signal only. No automatic trade."
-                    )
-
-                    send_telegram(message)
+                    send_discord_signal(result)
                     st.session_state.last_signals[signal_key] = signal
 
             except Exception as e:

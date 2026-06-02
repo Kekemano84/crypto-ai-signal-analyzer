@@ -165,7 +165,12 @@ if st.button("Frissítés / Elemzés indítása") or auto_refresh:
                 signal_key = f"{coin}_{timeframe}"
                 previous_signal = st.session_state.last_signals.get(signal_key)
 
-                if telegram_enabled and signal in ["LONG", "SHORT"] and previous_signal != signal:
+                if (
+    telegram_enabled
+    and signal in ["LONG", "SHORT"]
+    and abs(result["Score"]) >= 50
+    and previous_signal != signal
+):
                     emoji = "🟢" if signal == "LONG" else "🔴"
 
                     message = (

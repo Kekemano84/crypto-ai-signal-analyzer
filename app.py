@@ -4,13 +4,14 @@ import ccxt
 import pandas as pd
 import requests
 import streamlit as st
+from PIL import Image
 from dotenv import load_dotenv
 from ta.momentum import RSIIndicator
 from ta.trend import EMAIndicator, MACD
 from ta.volatility import AverageTrueRange
-from PIL import Image
 
 load_dotenv()
+
 
 def get_secret(name):
     try:
@@ -18,43 +19,33 @@ def get_secret(name):
     except Exception:
         return os.getenv(name)
 
+
 TELEGRAM_BOT_TOKEN = get_secret("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = get_secret("TELEGRAM_CHAT_ID")
 
 st.set_page_config(
-    page_title="Crypto AI Signal Analyzer",
+    page_title="Crypto Edge AI",
     page_icon="⚡",
     layout="wide"
 )
 
-logo = Image.open("logo.png")
-
-col1, col2 = st.columns([1,4])
-
-with col1:
-    st.image(logo, width=120)
-
-with col2:
-    st.markdown("""
-    <h1 style='margin-bottom:0px;'>
-    Crypto Edge AI
-    </h1>
-    <p style='color:#B0B0B0;'>
-    Professional AI Crypto Signal Analyzer
-    </p>
-    """, unsafe_allow_html=True)
-    st.markdown("""
+st.markdown("""
 <style>
 .main {
     background-color: #0b0f19;
 }
+.header-box {
+    text-align: center;
+    padding: 25px;
+}
 .big-title {
-    font-size: 54px;
-    font-weight: 800;
+    font-size: 62px;
+    font-weight: 900;
     color: #ffffff;
+    margin-bottom: 5px;
 }
 .subtitle {
-    font-size: 20px;
+    font-size: 22px;
     color: #b6c2d9;
 }
 .card {
@@ -91,12 +82,12 @@ with col2:
 </style>
 """, unsafe_allow_html=True)
 
+
 TEXT = {
     "Magyar": {
-        "title": "⚡ Crypto Edge AI",
+        "title": "Crypto Edge AI",
         "subtitle": "Professzionális BTC / ETH / SOL / BNB jelzésfigyelő Telegram értesítéssel. Automatikus trade nincs.",
         "settings": "Beállítások",
-        "language": "Nyelv / Language",
         "timeframe": "Idősík",
         "account": "Számla mérete USDT",
         "risk": "Kockázat trade-enként %",
@@ -109,13 +100,11 @@ TEXT = {
         "loading": "Adatok lekérése és elemzés...",
         "strong": "🏆 Erős jelzések",
         "full": "📊 Teljes elemzés",
-        "scanner": "AI Market Scanner",
     },
     "English": {
-        "title": "⚡ Crypto Edge AI",
+        "title": "Crypto Edge AI",
         "subtitle": "Professional BTC / ETH / SOL / BNB signal scanner with Telegram alerts. No automatic trading.",
         "settings": "Settings",
-        "language": "Language / Nyelv",
         "timeframe": "Timeframe",
         "account": "Account size USDT",
         "risk": "Risk per trade %",
@@ -128,9 +117,9 @@ TEXT = {
         "loading": "Fetching market data and analysing...",
         "strong": "🏆 Strong Signals",
         "full": "📊 Full Analysis",
-        "scanner": "AI Market Scanner",
     }
 }
+
 
 COINS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT"]
 
@@ -270,18 +259,33 @@ with st.sidebar:
     telegram_enabled = st.checkbox(t["telegram"], value=True)
 
 
-st.markdown(
-    f"""
-    <div class="card">
+try:
+    logo = Image.open("logo.png")
+    st.markdown("<div class='header-box'>", unsafe_allow_html=True)
+    st.image(logo, width=320)
+    st.markdown(
+        f"""
         <div class="big-title">{t['title']}</div>
         <div class="subtitle">{t['subtitle']}</div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+except Exception:
+    st.markdown(
+        f"""
+        <div class="card">
+            <div class="big-title">⚡ {t['title']}</div>
+            <div class="subtitle">{t['subtitle']}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
 if "last_signals" not in st.session_state:
     st.session_state.last_signals = {}
+
 
 if st.button(t["button"]) or auto_refresh:
     results = []
@@ -296,6 +300,7 @@ if st.button(t["button"]) or auto_refresh:
                     risk_percent,
                     max_position_size
                 )
+
                 results.append(result)
 
                 signal = result["Signal"]
@@ -348,6 +353,7 @@ if st.button(t["button"]) or auto_refresh:
                 })
 
     cols = st.columns(4)
+
     for idx, r in enumerate(results):
         with cols[idx]:
             if "LONG" in r["Signal"]:

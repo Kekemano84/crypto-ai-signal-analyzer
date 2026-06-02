@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from ta.momentum import RSIIndicator
 from ta.trend import EMAIndicator, MACD
 from ta.volatility import AverageTrueRange
+from PIL import Image
 
 load_dotenv()
 
@@ -26,7 +27,23 @@ st.set_page_config(
     layout="wide"
 )
 
-st.markdown("""
+logo = Image.open("logo.png")
+
+col1, col2 = st.columns([1,4])
+
+with col1:
+    st.image(logo, width=120)
+
+with col2:
+    st.markdown("""
+    <h1 style='margin-bottom:0px;'>
+    Crypto Edge AI
+    </h1>
+    <p style='color:#B0B0B0;'>
+    Professional AI Crypto Signal Analyzer
+    </p>
+    """, unsafe_allow_html=True)
+    st.markdown("""
 <style>
 .main {
     background-color: #0b0f19;

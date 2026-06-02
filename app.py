@@ -36,7 +36,7 @@ st.markdown("""
 }
 .header-box {
     text-align: center;
-    padding: 25px;
+    padding: 20px;
 }
 .big-title {
     font-size: 62px;
@@ -47,13 +47,6 @@ st.markdown("""
 .subtitle {
     font-size: 22px;
     color: #b6c2d9;
-}
-.card {
-    padding: 20px;
-    border-radius: 18px;
-    background: linear-gradient(135deg, #111827, #1f2937);
-    border: 1px solid #334155;
-    margin-bottom: 15px;
 }
 .green-card {
     padding: 18px;
@@ -136,7 +129,10 @@ def send_telegram(message):
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
         requests.post(
             url,
-            json={"chat_id": TELEGRAM_CHAT_ID, "text": message},
+            json={
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": message
+            },
             timeout=10
         )
     except Exception as e:
@@ -145,7 +141,10 @@ def send_telegram(message):
 
 def get_data(symbol, timeframe, limit=250):
     data = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
-    df = pd.DataFrame(data, columns=["time", "open", "high", "low", "close", "volume"])
+    df = pd.DataFrame(
+        data,
+        columns=["time", "open", "high", "low", "close", "volume"]
+    )
     df["time"] = pd.to_datetime(df["time"], unit="ms")
     return df
 
@@ -259,28 +258,22 @@ with st.sidebar:
     telegram_enabled = st.checkbox(t["telegram"], value=True)
 
 
+st.markdown("<div class='header-box'>", unsafe_allow_html=True)
+
 try:
     logo = Image.open("logo.png")
-    st.markdown("<div class='header-box'>", unsafe_allow_html=True)
     st.image(logo, width=320)
-    st.markdown(
-        f"""
-        <div class="big-title">{t['title']}</div>
-        <div class="subtitle">{t['subtitle']}</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
 except Exception:
-    st.markdown(
-        f"""
-        <div class="card">
-            <div class="big-title">⚡ {t['title']}</div>
-            <div class="subtitle">{t['subtitle']}</div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown("<div style='font-size:70px;'>⚡</div>", unsafe_allow_html=True)
+
+st.markdown(
+    f"""
+    <div class="big-title">{t['title']}</div>
+    <div class="subtitle">{t['subtitle']}</div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 if "last_signals" not in st.session_state:

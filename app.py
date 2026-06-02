@@ -647,7 +647,28 @@ with tab_history:
         st.info("Nincs nyitott paper trade.")
     st.subheader("📜 Lezárt paper trade-ek")
     if not closed_df.empty:
-        st.dataframe(closed_df.tail(100).astype(str), use_container_width=True)
+        def color_trade_rows(row):
+    result = str(row["result"])
+
+    if "WIN" in result:
+        return ['background-color: rgba(0,180,0,0.25); color: #90EE90'] * len(row)
+
+    elif "LOSS" in result:
+        return ['background-color: rgba(180,0,0,0.25); color: #FF9999'] * len(row)
+
+    return [''] * len(row)
+
+
+styled_closed = (
+    closed_df.tail(100)
+    .style
+    .apply(color_trade_rows, axis=1)
+)
+
+st.dataframe(
+    styled_closed,
+    use_container_width=True
+)
     else:
         st.info("Még nincs lezárt paper trade.")
 
